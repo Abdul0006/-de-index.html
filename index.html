@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KOLONGO TANZANIA LIMITED - Secure Attendance System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
 <body class="bg-light">
     <div id="loginSection" class="container my-5" style="max-width: 450px;">
@@ -73,7 +74,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 shadow-sm rounded">
             <div>
                 <h3 class="fw-bold text-primary mb-0">KOLONGO TANZANIA LIMITED</h3>
-                <p class="text-muted mb-0">Admin Panel (Karibu Abdul - Fully Secured)</p>
+                <p class="text-muted mb-0">Admin Panel (Karibu Abdul)</p>
                 <div class="badge bg-secondary mt-1" id="adminCurrentDate">Tarehe: ...</div>
             </div>
             <button class="btn btn-outline-danger" onclick="logout()">Toka (Logout)</button>
@@ -188,6 +189,26 @@
             { code: "007", name: "BRAIN SIAME", dept: "Operations Manager" }
         ];
 
+        const firebaseConfig = {
+            apiKey: "WEKA_API_KEY",
+            authDomain: "WEKA_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://WEKA_PROJECT_ID-default-rtdb.firebaseio.com",
+            projectId: "WEKA_PROJECT_ID",
+            storageBucket: "WEKA_PROJECT_ID.appspot.com",
+            messagingSenderId: "WEKA_SENDER_ID",
+            appId: "WEKA_APP_ID"
+        };
+
+        const cloudReady = !Object.values(firebaseConfig).some(value =>
+            typeof value === 'string' && value.includes('WEKA_')
+        );
+
+        let db = null;
+        if (cloudReady) {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.database();
+        }
+
         let employees = JSON.parse(localStorage.getItem('kolongo_tz_employees_v8')) || defaultEmployees;
         if (!localStorage.getItem('kolongo_tz_employees_v8')) {
             localStorage.setItem('kolongo_tz_employees_v8', JSON.stringify(employees));
@@ -207,15 +228,47 @@
             const idLabel = document.getElementById('idLabel');
             const idInput = document.getElementById('loginId');
 
-            if(type === 'admin') {
+            if (type === 'admin') {
                 passContainer.classList.remove('d-none');
-                idLabel.innerText = "Admin Username:";
-                idInput.value = "abdul";
+                idLabel.innerText = 'Admin Username:';
+                idInput.value = 'abdul';
             } else {
                 passContainer.classList.add('d-none');
-                idLabel.innerText = "Namba ya ID (Employee ID):";
-                idInput.value = "";
+                idLabel.innerText = 'Namba ya ID (Employee ID):';
+                idInput.value = '';
             }
+        }
+
+        function saveLocalData() {
+            localStorage.setItem('kolongo_tz_employees_v8', JSON.stringify(employees));
+            localStorage.setItem('kolongo_tz_attendance_v8', JSON.stringify(attendance));
+        }
+
+        function syncFromCloud() {
+            if (!cloudReady || !db) return;
+
+            db.ref('employees').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    employees = Object.values(data);
+                    localStorage.setItem('kolongo_tz_employees_v8', JSON.stringify(employees));
+                }
+                if (currentUser && currentUser.role === 'admin') {
+                    updateAdminPanelData();
+                }
+            });
+
+            db.ref('attendance').on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    attendance = Object.entries(data).map(([key, value]) => ({ ...value, firebaseKey: key }));
+                    localStorage.setItem('kolongo_tz_attendance_v8', JSON.stringify(attendance));
+                }
+                if (currentUser && currentUser.role === 'admin') {
+                    loadReport();
+                    updateLeftSidebarSummary();
+                }
+            });
         }
 
         document.getElementById('loginForm').addEventListener('submit', function(e) {
@@ -223,19 +276,22 @@
             const type = document.getElementById('loginType').value;
             const idVal = document.getElementById('loginId').value.trim();
 
-            if(type === 'admin') {
+            if (type === 'admin') {
                 const passVal = document.getElementById('loginPassword').value.trim();
-                if(idVal.toLowerCase() === 'abdul' && passVal === 'kolongo2026') {
+                if (idVal.toLowerCase() === 'abdul' && passVal === 'kolongo2026') {
                     currentUser = { role: 'admin', name: 'ABDUL .I.ISIHAK' };
                     document.getElementById('loginSection').classList.add('d-none');
                     document.getElementById('adminDashboard').classList.remove('d-none');
                     updateAdminPanelData();
+                    if (!cloudReady) {
+                        showAdminAlert('Firebase haijawekwa bado: data itakaa kwenye kifaa hiki. Badili config ya Firebase ilipofikishwa.', 'warning');
+                    }
                 } else {
                     showLoginAlert('Authentication Failed: Username au Password ya Admin si sahihi!', 'danger');
                 }
             } else {
                 const emp = employees.find(e => e.code === idVal);
-                if(emp) {
+                if (emp) {
                     currentUser = { role: 'employee', ...emp };
                     document.getElementById('loginSection').classList.add('d-none');
                     document.getElementById('employeeDashboard').classList.remove('d-none');
@@ -247,70 +303,96 @@
         });
 
         function performAttendance() {
-            if(!currentUser || currentUser.role !== 'employee') return;
+            if (!currentUser || currentUser.role !== 'employee') return;
             const todayDateOnly = new Date().toLocaleDateString();
             const timeNow = new Date().toLocaleTimeString();
 
             let record = attendance.find(a => a.code === currentUser.code && a.date === todayDateOnly);
 
-            if(!record) {
-                attendance.push({ 
+            if (!record) {
+                const newRecord = {
                     id: Date.now(),
-                    code: currentUser.code, 
-                    name: currentUser.name, 
-                    dept: currentUser.dept, 
-                    date: todayDateOnly, 
-                    checkIn: timeNow, 
-                    checkOut: '-', 
-                    status: 'Present' 
-                });
+                    code: currentUser.code,
+                    name: currentUser.name,
+                    dept: currentUser.dept,
+                    date: todayDateOnly,
+                    checkIn: timeNow,
+                    checkOut: '-',
+                    status: 'Present'
+                };
+
+                if (cloudReady && db) {
+                    db.ref('attendance').push(newRecord);
+                } else {
+                    attendance.push(newRecord);
+                    saveLocalData();
+                }
+
                 showEmpAlert(`Umefanikiwa Kuingia (Check-In) saa ${timeNow}!`, 'success');
-            } else if(record.checkOut === '-') {
-                record.checkOut = timeNow;
+            } else if (record.checkOut === '-') {
+                if (cloudReady && db && record.firebaseKey) {
+                    db.ref(`attendance/${record.firebaseKey}/checkOut`).set(timeNow);
+                } else {
+                    record.checkOut = timeNow;
+                    saveLocalData();
+                }
                 showEmpAlert(`Umefanikiwa Kutoka (Check-Out) saa ${timeNow}! Asante kwa kazi njema.`, 'info');
             } else {
                 showEmpAlert('Tayari umeshakamilisha mahudhurio yako yote ya leo.', 'warning');
             }
-
-            localStorage.setItem('kolongo_tz_attendance_v8', JSON.stringify(attendance));
         }
 
         document.getElementById('registerForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            if(!currentUser || currentUser.role !== 'admin') return;
-            
+            if (!currentUser || currentUser.role !== 'admin') return;
+
             const code = document.getElementById('regCode').value.trim();
             const name = document.getElementById('regName').value.trim();
             const dept = document.getElementById('regDept').value.trim();
 
-            if(employees.some(emp => emp.code === code)) {
+            if (employees.some(emp => emp.code === code)) {
                 showAdminAlert('Namba hii ya ID tayari inatumika na mfanyakazi mwingine!', 'danger');
                 return;
             }
 
-            employees.push({ code, name, dept });
-            localStorage.setItem('kolongo_tz_employees_v8', JSON.stringify(employees));
+            const employee = { code, name, dept };
+
+            if (cloudReady && db) {
+                db.ref(`employees/${code}`).set(employee);
+            } else {
+                employees.push(employee);
+                saveLocalData();
+            }
+
             showAdminAlert(`Mfanyakazi ${name} amesajiliwa kikamilifu!`, 'success');
             this.reset();
             updateAdminPanelData();
         });
 
         function deleteEmployeeByCode(codeToDelete) {
-            if(!currentUser || currentUser.role !== 'admin') return;
-            
-            if(confirm('Je, una uhakika unataka kumfuta mfanyakazi huyu kwenye mfumo?')) {
-                employees = employees.filter(e => e.code !== codeToDelete);
-                localStorage.setItem('kolongo_tz_employees_v8', JSON.stringify(employees));
+            if (!currentUser || currentUser.role !== 'admin') return;
+
+            if (confirm('Je, una uhakika unataka kumfuta mfanyakazi huyu kwenye mfumo?')) {
+                if (cloudReady && db) {
+                    db.ref(`employees/${codeToDelete}`).remove();
+                } else {
+                    employees = employees.filter(e => e.code !== codeToDelete);
+                    saveLocalData();
+                }
                 showAdminAlert('Mfanyakazi amefutwa kikamilifu.', 'success');
                 updateAdminPanelData();
             }
         }
 
-        function deleteAttendanceRecord(recordId) {
-            if(!currentUser || currentUser.role !== 'admin') return;
-            if(confirm('Je, una uhakika unataka kufuta taarifa hii ya mahudhurio?')) {
-                attendance = attendance.filter(a => a.id !== recordId);
-                localStorage.setItem('kolongo_tz_attendance_v8', JSON.stringify(attendance));
+        function deleteAttendanceRecord(recordId, firebaseKey) {
+            if (!currentUser || currentUser.role !== 'admin') return;
+            if (confirm('Je, una uhakika unataka kufuta taarifa hii ya mahudhurio?')) {
+                if (cloudReady && db && firebaseKey) {
+                    db.ref(`attendance/${firebaseKey}`).remove();
+                } else {
+                    attendance = attendance.filter(a => a.id !== recordId);
+                    saveLocalData();
+                }
                 loadReport();
                 updateLeftSidebarSummary();
                 showAdminAlert('Taarifa ya mahudhurio imefutwa!', 'success');
@@ -326,7 +408,7 @@
 
         function populateEmployeeFilters() {
             const filterSelect = document.getElementById('filterEmployee');
-            filterSelect.innerHTML = `<option value="all">Wafanyakazi Wote</option>`;
+            filterSelect.innerHTML = '<option value="all">Wafanyakazi Wote</option>';
 
             employees.forEach(emp => {
                 filterSelect.innerHTML += `<option value="${emp.code}">${emp.name} (${emp.dept})</option>`;
@@ -339,8 +421,8 @@
             const listContainer = document.getElementById('leftEmployeeSummaryList');
             listContainer.innerHTML = '';
 
-            if(employees.length === 0) {
-                listContainer.innerHTML = `<li class="list-group-item text-muted text-center small">Hakuna wafanyakazi.</li>`;
+            if (employees.length === 0) {
+                listContainer.innerHTML = '<li class="list-group-item text-muted text-center small">Hakuna wafanyakazi.</li>';
                 return;
             }
 
@@ -362,8 +444,8 @@
             const deleteContainer = document.getElementById('deleteEmpListContainer');
             deleteContainer.innerHTML = '';
 
-            if(employees.length === 0) {
-                deleteContainer.innerHTML = `<li class="list-group-item text-muted text-center small">Hakuna wafanyakazi wa kuwafuta.</li>`;
+            if (employees.length === 0) {
+                deleteContainer.innerHTML = '<li class="list-group-item text-muted text-center small">Hakuna wafanyakazi wa kuwafuta.</li>';
                 return;
             }
 
@@ -381,29 +463,29 @@
         }
 
         function loadReport() {
-            if(!currentUser || currentUser.role !== 'admin') return;
+            if (!currentUser || currentUser.role !== 'admin') return;
             const tbody = document.getElementById('reportTableBody');
             const selectedEmpCode = document.getElementById('filterEmployee').value;
 
             let filteredRecords = attendance;
-            if(selectedEmpCode !== 'all') {
+            if (selectedEmpCode !== 'all') {
                 filteredRecords = attendance.filter(a => a.code === selectedEmpCode);
             }
 
-            if(filteredRecords.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">Hakuna kumbukumbu za mahudhurio zilizopatikana.</td></tr>`;
+            if (filteredRecords.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">Hakuna kumbukumbu za mahudhurio zilizopatikana.</td></tr>';
                 return;
             }
 
             tbody.innerHTML = '';
             [...filteredRecords].reverse().forEach(att => {
-                if(!att.id) att.id = Math.random();
-                
+                if (!att.id) att.id = Math.random();
+
                 let statusBadge = '';
-                if(att.status === 'Absent' || att.status === 'X') {
-                    statusBadge = `<span class="badge bg-danger">X (Hakuwepo)</span>`;
+                if (att.status === 'Absent' || att.status === 'X') {
+                    statusBadge = '<span class="badge bg-danger">X (Hakuwepo)</span>';
                 } else {
-                    statusBadge = `<span class="badge bg-success">Present (Amefika)</span>`;
+                    statusBadge = '<span class="badge bg-success">Present (Amefika)</span>';
                 }
 
                 tbody.innerHTML += `
@@ -416,7 +498,7 @@
                         <td>${att.checkOut === '-' ? '<span class="badge bg-warning text-dark">Yupo kazini</span>' : att.checkOut}</td>
                         <td>${statusBadge}</td>
                         <td>
-                            <button class="btn btn-outline-danger btn-sm py-0 px-1" onclick="deleteAttendanceRecord(${att.id})" title="Futa Taarifa">Futa</button>
+                            <button class="btn btn-outline-danger btn-sm py-0 px-1" onclick="deleteAttendanceRecord(${att.id}, '${att.firebaseKey || ''}')" title="Futa Taarifa">Futa</button>
                         </td>
                     </tr>
                 `;
@@ -435,12 +517,17 @@
         function showLoginAlert(msg, type) {
             document.getElementById('loginAlert').innerHTML = `<div class="alert alert-${type} py-2 small">${msg}</div>`;
         }
+
         function showEmpAlert(msg, type) {
             document.getElementById('empAlert').innerHTML = `<div class="alert alert-${type} py-2 small">${msg}</div>`;
         }
+
         function showAdminAlert(msg, type) {
             document.getElementById('adminAlert').innerHTML = `<div class="alert alert-${type} py-2 small">${msg}</div>`;
         }
+
+        syncFromCloud();
+        updateAdminPanelData();
     </script>
 </body>
 </html>
