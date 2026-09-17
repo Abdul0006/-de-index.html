@@ -1,20 +1,124 @@
 <!doctype html>
 <html lang="sw">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>KOLONGO TANZANIA LIMITED - Attendance</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<style>.hidden{display:none!important}.employee-row{cursor:pointer}.employee-row:hover{background:#eef5ff}.small-label{font-size:.72rem;color:#6c757d;text-transform:uppercase;font-weight:700}.clock{font-variant-numeric:tabular-nums}</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KOLONGO TANZANIA LIMITED - Mfumo wa Mahudhurio</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .hidden{display:none!important}.employee-row{cursor:pointer}.employee-row:hover{background:#eef5ff}
+    .small-label{font-size:.72rem;color:#6c757d;text-transform:uppercase;font-weight:700}
+  </style>
 </head>
 <body class="bg-light">
-<div id="loginPage" class="container py-5" style="max-width:480px"><div class="card shadow border-0"><div class="card-header bg-primary text-white text-center p-4"><h4 class="mb-1">KOLONGO TANZANIA LIMITED</h4><small>Mfumo Kamili wa Mahudhurio</small></div><div class="card-body p-4"><div id="loginMsg"></div><form id="loginForm"><label class="form-label fw-bold">Aina ya kuingia</label><select id="loginType" class="form-select mb-3"><option value="employee">Mfanyakazi</option><option value="admin">Admin</option></select><label id="loginLabel" class="form-label fw-bold">Namba ya ID</label><input id="loginId" class="form-control mb-3" placeholder="Mfano: 001" required><div id="passwordBox" class="hidden"><label class="form-label fw-bold">Password ya Admin</label><input id="loginPassword" type="password" class="form-control mb-3"></div><button class="btn btn-primary w-100">Ingia</button></form></div></div></div>
-<div id="employeePage" class="container py-4 hidden"><div class="bg-white rounded shadow-sm p-3 d-flex justify-content-between align-items-center"><div><h4 class="text-primary mb-0">KOLONGO TANZANIA LIMITED</h4><span id="employeeWelcome" class="text-muted"></span></div><button class="btn btn-outline-danger" onclick="logout()">Toka</button></div><div id="employeeMsg" class="mt-3"></div><div class="row g-3 mt-1"><div class="col-lg-5"><div class="card shadow-sm"><div class="card-header bg-primary text-white">Taarifa za Mfanyakazi</div><div id="employeeDetails" class="card-body"></div></div></div><div class="col-lg-7"><div class="card shadow-sm"><div class="card-header bg-success text-white d-flex justify-content-between"><b>Mahudhurio ya Leo</b><span id="employeeDate"></span></div><div class="card-body text-center"><div id="liveClock" class="clock display-6 mb-3"></div><p class="text-muted">Tumia IN unapoingia na OUT unapotoka.</p><div class="d-flex gap-2"><button id="inButton" class="btn btn-success btn-lg flex-fill" onclick="markIn()">IN - INGIA</button><button id="outButton" class="btn btn-danger btn-lg flex-fill" onclick="markOut()">OUT - TOKA</button></div><div id="todayStatus" class="mt-3"></div></div></div></div></div></div>
-<div id="adminPage" class="container-fluid py-4 hidden"><div class="bg-white rounded shadow-sm p-3 d-flex justify-content-between align-items-center"><div><h4 class="text-primary mb-0">KOLONGO TANZANIA LIMITED</h4><span>Admin Panel - Taarifa Kamili</span></div><button class="btn btn-outline-danger" onclick="logout()">Toka</button></div><div id="adminMsg" class="mt-3"></div><div class="row g-3 mt-1"><div class="col-xl-4"><div class="card shadow-sm"><div class="card-header bg-success text-white fw-bold">Ongeza / Hariri Mfanyakazi</div><div class="card-body"><form id="employeeForm"><input id="editingCode" type="hidden"><label class="small-label">ID</label><input id="formCode" class="form-control mb-2" required><label class="small-label">Jina kamili</label><input id="formName" class="form-control mb-2" required><label class="small-label">Idara / Nafasi</label><input id="formDept" class="form-control mb-2" required><label class="small-label">Simu</label><input id="formPhone" class="form-control mb-2"><label class="small-label">Barua pepe</label><input id="formEmail" type="email" class="form-control mb-2"><label class="small-label">Tarehe ya kuanza</label><input id="formStart" type="date" class="form-control mb-3"><button class="btn btn-success">Hifadhi</button> <button type="button" id="cancelEdit" class="btn btn-secondary hidden" onclick="resetForm()">Ghairi</button></form></div></div><div class="card shadow-sm mt-3"><div class="card-body"><span class="small-label">Jumla ya wafanyakazi</span><div id="employeeCount" class="display-6 fw-bold text-primary">0</div></div></div></div><div class="col-xl-8"><div class="card shadow-sm"><div class="card-header d-flex justify-content-between align-items-center"><b>LIST YA WAFANYAKAZI</b><select id="employeeSelect" class="form-select w-auto"><option value="">Chagua mfanyakazi</option></select></div><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>ID</th><th>Jina</th><th>Idara</th><th>Simu</th><th>Vitendo</th></tr></thead><tbody id="employeeTable"></tbody></table></div></div><div id="detailsCard" class="card shadow-sm mt-3 hidden"><div class="card-header bg-primary text-white d-flex justify-content-between"><b>DETAILS ZA MFANYAKAZI</b><button class="btn btn-sm btn-light" onclick="closeDetails()">Funga</button></div><div id="detailsBody" class="card-body"></div></div></div></div><div class="card shadow-sm mt-3"><div class="card-header d-flex justify-content-between align-items-center"><b>TAARIFA ZA TIME IN / TIME OUT</b><select id="reportSelect" class="form-select w-auto"><option value="all">Wafanyakazi wote</option></select></div><div class="table-responsive"><table class="table table-striped table-bordered align-middle mb-0"><thead class="table-dark"><tr><th>ID</th><th>Jina</th><th>Idara</th><th>Tarehe</th><th>Time In</th><th>Time Out</th><th>Status</th><th>Kitendo</th></tr></thead><tbody id="attendanceTable"></tbody></table></div></div></div>
+  <!-- Login: wafanyakazi hutumia ID pekee; admin hutumia username na password. -->
+  <main id="loginPage" class="container py-5" style="max-width:480px">
+    <div class="card shadow border-0">
+      <div class="card-header bg-primary text-white text-center p-4">
+        <h4 class="mb-1">KOLONGO TANZANIA LIMITED</h4>
+        <small>Mfumo wa Mahudhurio</small>
+      </div>
+      <div class="card-body p-4">
+        <div id="loginAlert"></div>
+        <form id="loginForm">
+          <label class="form-label fw-bold">Aina ya kuingia</label>
+          <select id="loginType" class="form-select mb-3">
+            <option value="employee">Mfanyakazi - ID pekee</option>
+            <option value="admin">Admin - username na password</option>
+          </select>
+          <label id="loginIdLabel" class="form-label fw-bold">Namba ya ID</label>
+          <input id="loginId" class="form-control mb-3" required autocomplete="username">
+          <div id="passwordBox" class="mb-3 hidden">
+            <label class="form-label fw-bold">Password ya Admin</label>
+            <input id="loginPassword" type="password" class="form-control" autocomplete="current-password">
+          </div>
+          <button class="btn btn-primary w-100 fw-bold">Ingia kwenye mfumo</button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <section id="employeePage" class="container py-4 hidden">
+    <header class="bg-white rounded shadow-sm p-3 d-flex justify-content-between align-items-center mb-4">
+      <div><h4 class="text-primary mb-0">KOLONGO TANZANIA LIMITED</h4><div id="employeeWelcome" class="text-muted"></div></div>
+      <button class="btn btn-outline-danger" onclick="logout()">Logout</button>
+    </header>
+    <div id="employeeAlert"></div>
+    <div class="card shadow-sm border-0 mx-auto" style="max-width:600px">
+      <div class="card-body text-center p-4">
+        <h5>Mahudhurio ya leo</h5><p id="employeeDate" class="text-muted"></p>
+        <div id="employeeDetails" class="mb-3"></div>
+        <button id="attendanceButton" class="btn btn-success btn-lg w-100" onclick="recordAttendance()">Wasilisha Check-In</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="adminPage" class="container-fluid py-4 hidden">
+    <header class="bg-white rounded shadow-sm p-3 d-flex justify-content-between align-items-center mb-4">
+      <div><h4 class="text-primary mb-0">KOLONGO TANZANIA LIMITED</h4><div class="text-muted">Admin Panel - Abdul</div></div>
+      <button class="btn btn-outline-danger" onclick="logout()">Logout</button>
+    </header>
+    <div id="adminAlert"></div>
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header bg-success text-white"><b id="employeeFormTitle">Sajili mfanyakazi</b></div>
+          <div class="card-body">
+            <form id="employeeForm">
+              <input type="hidden" id="editingCode">
+              <label class="small-label">ID</label><input id="formCode" class="form-control mb-2" required>
+              <label class="small-label">Jina kamili</label><input id="formName" class="form-control mb-2" required>
+              <label class="small-label">Idara / nafasi</label><input id="formDept" class="form-control mb-2" required>
+              <label class="small-label">Simu (hiari)</label><input id="formPhone" class="form-control mb-3">
+              <button class="btn btn-success w-100" id="saveEmployeeButton">Ongeza mfanyakazi</button>
+              <button type="button" class="btn btn-outline-secondary w-100 mt-2 hidden" id="cancelEditButton" onclick="cancelEdit()">Ghairi edit</button>
+            </form>
+          </div>
+        </div>
+        <div class="card shadow-sm border-0"><div class="card-header bg-dark text-white d-flex justify-content-between"><b>Wafanyakazi</b><span id="employeeCount" class="badge bg-success"></span></div><div id="employeeList" class="list-group list-group-flush"></div></div>
+      </div>
+      <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+          <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center gap-2 flex-wrap"><b>Ripoti kamili ya mahudhurio</b><select id="reportFilter" class="form-select form-select-sm" style="max-width:260px" onchange="renderReport()"><option value="all">Wafanyakazi wote</option></select></div>
+          <div class="card-body"><div class="table-responsive"><table class="table table-striped table-bordered align-middle small"><thead class="table-secondary"><tr><th>ID</th><th>Jina</th><th>Idara</th><th>Tarehe</th><th>Check-in</th><th>Check-out</th><th>Kitendo</th></tr></thead><tbody id="reportBody"></tbody></table></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
 <script>
-const seed=[{code:'001',name:'ABDUL .I.ISIHAK',dept:'Bond Operator'},{code:'002',name:'ANUARY ANUARY',dept:'Declaration Officer'},{code:'003',name:'ELIPENDO ISAYA',dept:'Assistant Declaration Officer'},{code:'004',name:'NAY MOLLEL',dept:'Assistant Declaration Officer'},{code:'005',name:'RUKIA SAID',dept:'Operations'},{code:'006',name:'RAMADHANI YUSUPHU',dept:'Manager'},{code:'007',name:'BRAIN SIAME',dept:'Operations Manager'}];
-let employees=JSON.parse(localStorage.getItem('kolongo_tz_employees_v8')||'null')||seed,attendance=JSON.parse(localStorage.getItem('kolongo_tz_attendance_v8')||'[]'),user=null,clockTimer;
-const $=id=>document.getElementById(id),save=()=>{localStorage.setItem('kolongo_tz_employees_v8',JSON.stringify(employees));localStorage.setItem('kolongo_tz_attendance_v8',JSON.stringify(attendance))},day=()=>new Date().toLocaleDateString('en-CA'),clock=()=>new Date().toLocaleTimeString('sw-TZ',{hour:'2-digit',minute:'2-digit',second:'2-digit'}),niceDate=()=>new Date().toLocaleDateString('sw-TZ',{weekday:'long',year:'numeric',month:'long',day:'numeric'}),message=(id,text,type='success')=>$(id).innerHTML='<div class="alert alert-'+type+'">'+text+'</div>',show=id=>['loginPage','employeePage','adminPage'].forEach(x=>$(x).classList.toggle('hidden',x!==id));
-loginType.onchange=()=>{let admin=loginType.value==='admin';passwordBox.classList.toggle('hidden',!admin);loginLabel.textContent=admin?'Admin username':'Namba ya ID';loginId.value=admin?'abdul':''};loginForm.onsubmit=e=>{e.preventDefault();let id=loginId.value.trim();if(loginType.value==='admin'){if(id.toLowerCase()!=='abdul'||loginPassword.value!=='kolongo2026')return message('loginMsg','Username au password si sahihi.','danger');user={role:'admin'};show('adminPage');renderAdmin()}else{let emp=employees.find(x=>String(x.code)===id);if(!emp)return message('loginMsg','ID haijatambuliwa.','danger');user={role:'employee',...emp};show('employeePage');renderEmployee()}};
-function renderEmployee(){employeeWelcome.textContent='Karibu '+user.name+' - '+user.dept+' - ID: '+user.code;employeeDate.textContent=niceDate();employeeDetails.innerHTML=employeeInfo(user);renderToday();clearInterval(clockTimer);clockTimer=setInterval(()=>liveClock.textContent=clock(),1000);liveClock.textContent=clock()}function employeeInfo(e){return '<div class="row g-3"><div class="col-6"><span class="small-label">Jina</span><div class="fw-bold">'+e.name+'</div></div><div class="col-6"><span class="small-label">ID</span><div>'+e.code+'</div></div><div class="col-6"><span class="small-label">Idara</span><div>'+e.dept+'</div></div><div class="col-6"><span class="small-label">Simu</span><div>'+(e.phone||'Haijawekwa')+'</div></div><div class="col-12"><span class="small-label">Email</span><div>'+(e.email||'Haijawekwa')+'</div></div></div>'}function todayRecord(){return attendance.find(x=>String(x.code)===String(user.code)&&x.date===day())}function renderToday(){let r=todayRecord();inButton.disabled=!!r;outButton.disabled=!r||!!r.timeOut;todayStatus.innerHTML=r?'<span class="badge bg-success p-2">Time In: '+r.timeIn+'</span> <span class="badge bg-danger p-2">Time Out: '+(r.timeOut||'Bado')+'</span>':'<span class="text-muted">Bado hujaweka attendance leo.</span>'}function markIn(){if(todayRecord())return message('employeeMsg','Umeshaingia leo.','warning');let r={id:Date.now(),code:user.code,name:user.name,dept:user.dept,date:day(),timeIn:clock(),timeOut:'',status:'Present'};attendance.push(r);save();renderToday();message('employeeMsg','Time In imehifadhiwa kwa '+r.timeIn+'.')}function markOut(){let r=todayRecord();if(!r)return message('employeeMsg','Bonyeza IN kwanza.','warning');if(r.timeOut)return message('employeeMsg','Time Out tayari imehifadhiwa.','warning');r.timeOut=clock();save();renderToday();message('employeeMsg','Time Out imehifadhiwa kwa '+r.timeOut+'.')}
-employeeForm.onsubmit=e=>{e.preventDefault();let old=editingCode.value.trim(),emp={code:formCode.value.trim(),name:formName.value.trim(),dept:formDept.value.trim(),phone:formPhone.value.trim(),email:formEmail.value.trim(),startDate:formStart.value};if(employees.some(x=>x.code===emp.code&&x.code!==old))return message('adminMsg','ID hiyo tayari ipo.','danger');let i=employees.findIndex(x=>x.code===old);if(i<0)employees.push(emp);else{employees[i]=emp;attendance.forEach(a=>{if(a.code===old)Object.assign(a,{code:emp.code,name:emp.name,dept:emp.dept})})}save();resetForm();renderAdmin();message('adminMsg',old?'Taarifa zimehaririwa.':'Mfanyakazi ameongezwa.')}function resetForm(){employeeForm.reset();editingCode.value='';cancelEdit.classList.add('hidden')}function editEmployee(code){let e=employees.find(x=>x.code===code);if(!e)return;editingCode.value=e.code;formCode.value=e.code;formName.value=e.name;formDept.value=e.dept;formPhone.value=e.phone||'';formEmail.value=e.email||'';formStart.value=e.startDate||'';cancelEdit.classList.remove('hidden');formName.scrollIntoView({behavior:'smooth'})}function deleteEmployee(code){let e=employees.find(x=>x.code===code);if(!e||!confirm('Futa '+e.name+'?'))return;employees=employees.filter(x=>x.code!==code);save();closeDetails();renderAdmin();message('adminMsg','Mfanyakazi amefutwa.')}function openDetails(code){let e=employees.find(x=>x.code===code);if(!e)return;employeeSelect.value=code;detailsBody.innerHTML=employeeInfo(e)+'<hr><div class="d-flex gap-2 flex-wrap"><button class="btn btn-primary" onclick="editEmployee(\''+e.code+'\')">Hariri</button><button class="btn btn-danger" onclick="deleteEmployee(\''+e.code+'\')">Futa</button></div>';detailsCard.classList.remove('hidden')}function closeDetails(){detailsCard.classList.add('hidden');employeeSelect.value=''}function renderAdmin(){employeeCount.textContent=employees.length;employeeTable.innerHTML=employees.map(e=>'<tr class="employee-row" onclick="openDetails(\''+e.code+'\')"><td>'+e.code+'</td><td><b>'+e.name+'</b></td><td>'+e.dept+'</td><td>'+(e.phone||'-')+'</td><td><button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation();editEmployee(\''+e.code+'\')">Hariri</button> <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation();deleteEmployee(\''+e.code+'\')">Futa</button></td></tr>').join('')||'<tr><td colspan="5" class="text-center">Hakuna wafanyakazi.</td></tr>';employeeSelect.innerHTML='<option value="">Chagua mfanyakazi kuona details</option>'+employees.map(e=>'<option value="'+e.code+'">'+e.name+' ('+e.code+')</option>').join('');reportSelect.innerHTML='<option value="all">Wafanyakazi wote</option>'+employees.map(e=>'<option value="'+e.code+'">'+e.name+' ('+e.code+')</option>').join('');renderReport()}function renderReport(){let f=reportSelect.value||'all',rows=attendance.filter(x=>f==='all'||String(x.code)===String(f));attendanceTable.innerHTML=rows.slice().reverse().map(a=>'<tr><td>'+a.code+'</td><td>'+a.name+'</td><td>'+a.dept+'</td><td>'+a.date+'</td><td>'+a.timeIn+'</td><td>'+(a.timeOut||'Bado')+'</td><td><span class="badge '+(a.timeOut?'bg-success':'bg-warning text-dark')+'">'+(a.timeOut?'Imekamilika':'Anaendelea')+'</span></td><td><button class="btn btn-sm btn-outline-danger" onclick="deleteAttendance('+a.id+')">Futa</button></td></tr>').join('')||'<tr><td colspan="8" class="text-center text-muted">Hakuna attendance.</td></tr>'}function deleteAttendance(id){if(!confirm('Futa taarifa hii?'))return;attendance=attendance.filter(x=>x.id!==id);save();renderReport()}employeeSelect.onchange=()=>employeeSelect.value&&openDetails(employeeSelect.value);reportSelect.onchange=renderReport;function logout(){user=null;clearInterval(clockTimer);loginForm.reset();show('loginPage')}show('loginPage');
-</script></body></html>
+const seed=[
+ {code:'001',name:'ABDUL .I.ISIHAK',dept:'Bond Operator',phone:''},{code:'002',name:'ANUARY ANUARY',dept:'Declaration Officer',phone:''},
+ {code:'003',name:'ELIPENDO ISAYA',dept:'Assistant Declaration Officer',phone:''},{code:'004',name:'NAY MOLLEL',dept:'Assistant Declaration Officer',phone:''},
+ {code:'005',name:'RUKIA SAID',dept:'Operations',phone:''},{code:'006',name:'RAMADHANI YUSUPHU',dept:'Manager',phone:''},{code:'007',name:'BRAIN SIAME',dept:'Operations Manager',phone:''}
+];
+const employeeKey='kolongo_tz_employees_v9', attendanceKey='kolongo_tz_attendance_v9';
+let employees=JSON.parse(localStorage.getItem(employeeKey)||'null')||seed;
+let attendance=JSON.parse(localStorage.getItem(attendanceKey)||'[]'), user=null;
+const $=id=>document.getElementById(id);
+function save(){localStorage.setItem(employeeKey,JSON.stringify(employees));localStorage.setItem(attendanceKey,JSON.stringify(attendance));}
+function dateKey(){return new Date().toLocaleDateString('en-CA')}
+function niceDate(){return new Date().toLocaleDateString('sw-TZ',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}
+function alertBox(id,message,type='success'){ $(id).innerHTML='<div class="alert alert-'+type+' py-2">'+message+'</div>'; }
+$('loginType').onchange=()=>{let admin=$('loginType').value==='admin';$('passwordBox').classList.toggle('hidden',!admin);$('loginIdLabel').textContent=admin?'Admin username':'Namba ya ID';$('loginId').value=admin?'abdul':'';$('loginPassword').required=admin;};
+$('loginForm').onsubmit=e=>{e.preventDefault();let type=$('loginType').value,id=$('loginId').value.trim();
+  if(type==='admin'){
+    if(id.toLowerCase()==='abdul' && $('loginPassword').value==='kolongo2026'){user={role:'admin'};$('loginPage').classList.add('hidden');$('adminPage').classList.remove('hidden');renderAdmin();}
+    else alertBox('loginAlert','Username au password ya admin si sahihi.','danger');
+  }else{let emp=employees.find(x=>x.code===id);if(!emp){alertBox('loginAlert','ID hii haijatambuliwa kwenye mfumo.','danger');return;}user={role:'employee',...emp};$('loginPage').classList.add('hidden');$('employeePage').classList.remove('hidden');renderEmployee();}
+};
+function renderEmployee(){ $('employeeWelcome').textContent='Karibu '+user.name+' - '+user.dept+' - ID: '+user.code;$('employeeDate').textContent=niceDate();$('employeeDetails').innerHTML='<b>ID:</b> '+user.code+' &nbsp; <b>Idara:</b> '+user.dept;let r=attendance.find(x=>x.code===user.code&&x.date===dateKey());$('attendanceButton').textContent=!r?'Wasilisha Check-In':r.checkOut==='-'?'Wasilisha Check-Out':'Mahudhurio yamekamilika';$('attendanceButton').disabled=!!r&&r.checkOut!=='-';}
+function recordAttendance(){if(!user||user.role!=='employee')return;let now=new Date().toLocaleTimeString('sw-TZ');let r=attendance.find(x=>x.code===user.code&&x.date===dateKey());if(!r){attendance.push({id:Date.now(),code:user.code,name:user.name,dept:user.dept,date:dateKey(),checkIn:now,checkOut:'-'});alertBox('employeeAlert','Umefanikiwa kufanya check-in saa '+now+'.');}else if(r.checkOut==='-'){r.checkOut=now;alertBox('employeeAlert','Umefanikiwa kufanya check-out saa '+now+'.','info');}save();renderEmployee();}
+function renderAdmin(){renderEmployeeList();renderFilters();renderReport();}
+function renderEmployeeList(){ $('employeeCount').textContent=employees.length; $('employeeList').innerHTML=employees.length?employees.map(e=>'<div class="list-group-item employee-row d-flex justify-content-between align-items-center"><span><b>'+e.name+'</b><br><small>ID: '+e.code+' | '+e.dept+'</small></span><span><button class="btn btn-sm btn-outline-primary me-1" onclick="editEmployee(\''+e.code+'\')">Edit</button><button class="btn btn-sm btn-outline-danger" onclick="deleteEmployee(\''+e.code+'\')">Futa</button></span></div>').join(''):'<div class="p-3 text-muted">Hakuna wafanyakazi.</div>';}
+function renderFilters(){let old=$('reportFilter').value;$('reportFilter').innerHTML='<option value="all">Wafanyakazi wote</option>'+employees.map(e=>'<option value="'+e.code+'">'+e.name+' ('+e.code+')</option>').join('');$('reportFilter').value=employees.some(e=>e.code===old)?old:'all';}
+$('employeeForm').onsubmit=e=>{e.preventDefault();let old=$('editingCode').value,emp={code:$('formCode').value.trim(),name:$('formName').value.trim(),dept:$('formDept').value.trim(),phone:$('formPhone').value.trim()};if(!emp.code||!emp.name||!emp.dept)return;if(old){if(emp.code!==old&&employees.some(x=>x.code===emp.code)){alertBox('adminAlert','ID hiyo tayari inatumika.','danger');return;}let i=employees.findIndex(x=>x.code===old);employees[i]=emp;attendance.forEach(r=>{if(r.code===old){r.code=emp.code;r.name=emp.name;r.dept=emp.dept;}});alertBox('adminAlert','Taarifa za mfanyakazi zimehaririwa.');}else{if(employees.some(x=>x.code===emp.code)){alertBox('adminAlert','ID hiyo tayari inatumika.','danger');return;}employees.push(emp);alertBox('adminAlert','Mfanyakazi ameongezwa kikamilifu.');}save();cancelEdit();renderAdmin();};
+function editEmployee(code){let e=employees.find(x=>x.code===code);$('editingCode').value=e.code;$('formCode').value=e.code;$('formName').value=e.name;$('formDept').value=e.dept;$('formPhone').value=e.phone||'';$('employeeFormTitle').textContent='Hariri mfanyakazi';$('saveEmployeeButton').textContent='Hifadhi mabadiliko';$('cancelEditButton').classList.remove('hidden');scrollTo({top:0,behavior:'smooth'});}
+function cancelEdit(){$('employeeForm').reset();$('editingCode').value='';$('employeeFormTitle').textContent='Sajili mfanyakazi';$('saveEmployeeButton').textContent='Ongeza mfanyakazi';$('cancelEditButton').classList.add('hidden');}
+function deleteEmployee(code){let e=employees.find(x=>x.code===code);if(!confirm('Futa '+e.name+'? Taarifa za mahudhurio zitabaki kwenye ripoti.'))return;employees=employees.filter(x=>x.code!==code);save();alertBox('adminAlert','Mfanyakazi amefutwa.');renderAdmin();}
+function deleteAttendance(id){if(!confirm('Futa rekodi hii ya mahudhurio?'))return;attendance=attendance.filter(x=>x.id!==id);save();renderReport();alertBox('adminAlert','Rekodi ya mahudhurio imefutwa.');}
+function renderReport(){let filter=$('reportFilter').value,rows=attendance.filter(x=>filter==='all'||x.code===filter).slice().reverse();$('reportBody').innerHTML=rows.length?rows.map(r=>'<tr><td>'+r.code+'</td><td>'+r.name+'</td><td>'+r.dept+'</td><td>'+r.date+'</td><td>'+r.checkIn+'</td><td>'+r.checkOut+'</td><td><button class="btn btn-sm btn-outline-danger" onclick="deleteAttendance('+r.id+')">Futa</button></td></tr>').join(''):'<tr><td colspan="7" class="text-center text-muted">Hakuna kumbukumbu.</td></tr>';}
+function logout(){user=null;$('loginPage').classList.remove('hidden');$('employeePage').classList.add('hidden');$('adminPage').classList.add('hidden');$('loginForm').reset();$('loginType').dispatchEvent(new Event('change'));}
+</script>
+</body>
+</html>
